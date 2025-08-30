@@ -1,0 +1,58 @@
+name: Build Android APK (standard only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # --- Key fix: unzip the Android project to repo root so Gradle can find settings.gradle.kts ---
+      - name: Ensure source zip exists at repo root
+        run: |
+          ls -al
+          test -f lockscreen_app_project_fixed_v9.zip || (echo "lockscreen_app_project_fixed_v9.zip not found at repo root" && exit 1)
+
+      - name: Unzip project into repository root
+        run: |
+          unzip -o lockscreen_app_project_fixed_v9.zip -d .
+          echo "After unzip:"
+          ls -al
+          # Sanity check for Gradle root files
+          if [ ! -f settings.gradle.kts ] && [ ! -f settings.gradle ]; then
+            echo "Gradle settings file missing after unzip"
+            exit 1
+          fi
+          if [ -f ./gradlew ]; then chmod +x ./gradlew; fi
+
+      - name: Build (assembleStandardDebug)
+        run: |
+          if [ -f ./gradlew ]; then
+            ./gradlew -Dorg.gradle.jvmargs="-Xmx4g" :app:assembleStandardDebug --no-daemon
+          else
+            gradle -Dorg.gradle.jvmargs="-Xmx4g" :app:assembleStandardDebug --no-daemon
+          fi
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: standard-debug-apk
+          path: |
+            app/build/outputs/**/*.apk
+            **/outputs/**/*.apk
+          if-no-files-found: warn
