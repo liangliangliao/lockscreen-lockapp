@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen_app_project_final_fixed_new.zip" ]]; then
-            zip="lockscreen_app_project_final_fixed_new.zip"
+          if [[ -f "lockscreen_app_project_final_fix_uri_v1.zip" ]]; then
+            zip="lockscreen_app_project_final_fix_uri_v1.zip"
           elif [[ -f "lockscreen_app_project_final_updated.zip" ]]; then
             zip="lockscreen_app_project_final_updated.zip"
           else
