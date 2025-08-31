@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "lockscreen_app_project_final_fixed_new.zip"
-      - "lockscreen-lockapp-feature-pack-v5-effects-modifier.zip"
+      - "lockscreen-lockapp-feature-pack-v6b-fillmaxsize-callsfixed.zip"
       - ".github/workflows/android_build.yml"
 
 jobs:
@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen-lockapp-feature-pack-v5-effects-modifier.zip" ]]; then
-            zip="lockscreen-lockapp-feature-pack-v5-effects-modifier.zip"
+          if [[ -f "lockscreen-lockapp-feature-pack-v6b-fillmaxsize-callsfixed.zip" ]]; then
+            zip="lockscreen-lockapp-feature-pack-v6b-fillmaxsize-callsfixed.zip"
           elif [[ -f "lockscreen_app_project_final_updated.zip" ]]; then
             zip="lockscreen_app_project_final_updated.zip"
           else
