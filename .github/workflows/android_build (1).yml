@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "lockscreen_app_project_final_fixed_new.zip"
-      - "lockscreen_app_project_final_fullscreen_pwd_v8.zip"
+      - "lockscreen_app_project_fullscreen_preview_v10.zip"
       - ".github/workflows/android_build.yml"
 
 jobs:
@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen_app_project_final_fullscreen_pwd_v8.zip" ]]; then
-            zip="lockscreen_app_project_final_fullscreen_pwd_v8.zip"
+          if [[ -f "lockscreen_app_project_fullscreen_preview_v10.zip" ]]; then
+            zip="lockscreen_app_project_fullscreen_preview_v10.zip"
           elif [[ -f "lockscreen_app_project_final_updated.zip" ]]; then
             zip="lockscreen_app_project_final_updated.zip"
           else
