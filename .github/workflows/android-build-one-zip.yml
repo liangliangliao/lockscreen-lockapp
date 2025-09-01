@@ -1,0 +1,168 @@
+name: Android ZIP Builder (One Zip + Smart Fallback)
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_name:
+        description: "Exact ZIP file name in repo root (e.g., lockscreen-lockapp-v27.zip)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Actions for forks note
+        run: |
+          echo "If you cannot run this workflow, check: Repo → Settings → Actions → General."
+          echo "Ensure Actions are enabled and 'Allow all actions' is selected."
+
+      - name: Verify ZIP exists
+        run: |
+          set -e
+          ls -la
+          test -f "${{ github.event.inputs.zip_name }}" || (echo "::error::ZIP not found: ${{ github.event.inputs.zip_name }}"; exit 1)
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y unzip jq tree
+
+      - name: Unzip into workdir
+        run: |
+          set -e
+          mkdir -p workdir
+          unzip -o -q "${{ github.event.inputs.zip_name }}" -d workdir
+          echo "::group::Tree (first 4 levels)"
+          tree -a -L 4 workdir || true
+          echo "::endgroup::"
+
+      - name: Discover Gradle roots
+        id: discover
+        shell: bash
+        run: |
+          set -e
+          find workdir -type f \( -name settings.gradle -o -name settings.gradle.kts \) | sed -E 's|/(settings\.gradle(\.kts)?)$||' | sort -u > roots.txt
+          echo "=== Discovered Gradle roots ==="
+          cat roots.txt || true
+          if [ -s roots.txt ]; then
+            ROOT=$(head -n1 roots.txt)
+            echo "root=$ROOT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "no_roots=true" >> $GITHUB_OUTPUT
+
+      - name: Smart fallback: synthesize a Gradle root
+        if: steps.discover.outputs.no_roots == 'true'
+        id: synth
+        shell: bash
+        run: |
+          set -e
+          # find android modules (must contain a build.gradle(.kts) AND an AndroidManifest.xml)
+          mapfile -t MODS < <(find workdir -type f \( -name "build.gradle" -o -name "build.gradle.kts" \) \
+            -printf "%h\n" | sort -u | while read d; do
+              if [ -f "$d/src/main/AndroidManifest.xml" ] || [ -f "$d/AndroidManifest.xml" ]; then
+                echo "$d"
+              fi
+            done)
+          if [ ${#MODS[@]} -eq 0 ]; then
+            echo "::error::No settings.gradle(.kts) and no Android modules found in ZIP."
+            echo "Please repackage your ZIP to include the project root (the one that contains settings.gradle(.kts))."
+            exit 1
+          fi
+          mkdir -p synth-root
+          # settings.gradle.kts
+          {
+            echo "rootProject.name = \"synth-root\""
+            echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }"
+            for idx in "${!MODS[@]}"; do
+              echo "include(\":m${idx}\")"
+            done
+            for idx in "${!MODS[@]}"; do
+              rel=$(python3 - <<'PY'
+import os,sys
+print(os.path.relpath(sys.argv[1], "synth-root"))
+PY
+"${MODS[$idx]}")
+              echo "project(\":m${idx}\").projectDir = file(\"$rel\")"
+            done
+          } > synth-root/settings.gradle.kts
+          # build.gradle.kts
+          cat > synth-root/build.gradle.kts <<'KTS'
+plugins { }
+allprojects {
+  repositories { google(); mavenCentral() }
+}
+KTS
+          echo "root=synth-root" >> $GITHUB_OUTPUT
+          echo "::group::Synth-root contents"
+          tree -a -L 2 synth-root || true
+          echo "::endgroup::"
+
+      - name: Choose root
+        id: choose
+        run: |
+          if [ -n "${{ steps.discover.outputs.root }}" ]; then
+            echo "root=${{ steps.discover.outputs.root }}" >> $GITHUB_OUTPUT
+          else
+            echo "root=${{ steps.synth.outputs.root }}" >> $GITHUB_OUTPUT
+          fi
+          echo "Chosen root: ${{ steps.discover.outputs.root || steps.synth.outputs.root }}"
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build with Gradle Wrapper (if present)
+        id: trywrapper
+        shell: bash
+        run: |
+          set -e
+          ROOT="${{ steps.choose.outputs.root }}"
+          if [ -f "$ROOT/gradlew" ]; then
+            chmod +x "$ROOT/gradlew"
+            echo "use_wrapper=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Assemble (Wrapper)
+        if: steps.trywrapper.outputs.use_wrapper == 'true'
+        working-directory: ${{ steps.choose.outputs.root }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Install Gradle 8.4 and Assemble (no wrapper)
+        if: steps.trywrapper.outputs.use_wrapper != 'true'
+        shell: bash
+        run: |
+          set -e
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.4
+          gradle -p "${{ steps.choose.outputs.root }}" assembleDebug --no-daemon
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: |
+            ${{ steps.choose.outputs.root }}/**/build/outputs/apk/**/debug/*.apk
+            ${{ steps.choose.outputs.root }}/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+
+      - name: Upload diagnostics (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics
+          path: |
+            workdir/**
+            synth-root/**
+            roots.txt
+          if-no-files-found: warn
