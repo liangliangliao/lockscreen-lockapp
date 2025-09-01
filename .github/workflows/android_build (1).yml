@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp-kiosk-v25-solid-lock.zip"
-      - "lockscreen-lockapp-fix-patch.zip"
+      - "lockscreen-lockapp-kiosk-v25b-compat.zip"
+      - "lockscreen-lockapp-fix-patch88.zip"
       - ".github/workflows/android_build.yml"
 
 jobs:
@@ -26,10 +26,10 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen-lockapp-kiosk-v25-solid-lock.zip" ]]; then
-            zip="lockscreen-lockapp-kiosk-v25-solid-lock.zip"
-          elif [[ -f "lockscreen_app_project_final_updated.zip" ]]; then
-            zip="lockscreen_app_project_final_updated.zip"
+          if [[ -f "lockscreen-lockapp-kiosk-v25b-compat.zip" ]]; then
+            zip="lockscreen-lockapp-kiosk-v25b-compat.zip"
+          elif [[ -f "lockscreen_app_project_final_updated3.zip" ]]; then
+            zip="lockscreen_app_project_final_updated3.zip"
           else
             echo "❌ 未找到 zip：请把修复后的 zip 放在仓库根目录，文件名为 lockscreen_app_project_final_fixed_new.zip 或 lockscreen_app_project_final_updated.zip"
             exit 1
