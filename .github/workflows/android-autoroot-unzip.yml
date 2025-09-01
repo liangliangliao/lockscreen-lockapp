@@ -1,0 +1,143 @@
+name: Build Android APK (AutoUnzip + Manual Run)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      root:
+        description: "Optional: build only this subdirectory (path to settings.gradle(.kts) dir)"
+        required: false
+        type: string
+      zip_glob:
+        description: "Optional: only unzip zips matching this glob (default: *.zip)"
+        required: false
+        type: string
+      exclude_glob:
+        description: "Optional: exclude zips matching this glob (default: ci-*.zip)"
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install unzip
+        run: sudo apt-get update -y && sudo apt-get install -y unzip
+
+      - name: Optional unzip projects
+        id: unzip
+        shell: bash
+        run: |
+          set -e
+          shopt -s nullglob
+          GLOB="${{ github.event.inputs.zip_glob }}"
+          EXCL="${{ github.event.inputs.exclude_glob }}"
+          : "${GLOB:=*.zip}"
+          : "${EXCL:=ci-*.zip}"
+
+          echo "Zip include glob: $GLOB"
+          echo "Zip exclude glob: $EXCL"
+
+          mkdir -p unzipped
+
+          found_any=false
+          for z in $GLOB; do
+            if [[ "$z" == $EXCL ]]; then
+              echo "Skipping excluded zip: $z"
+              continue
+            fi
+            if [ ! -f "$z" ]; then
+              continue
+            fi
+            found_any=true
+            base=$(basename "$z")
+            name="${base%.*}"
+            dest="unzipped/$name"
+            mkdir -p "$dest"
+            echo "Unzipping $z -> $dest"
+            unzip -o -q "$z" -d "$dest"
+          done
+          if [ "$found_any" = false ]; then
+            echo "No zips matched; will try to build existing sources in repo."
+          fi
+
+      - name: Locate Gradle project root (settings.gradle/.kts)
+        id: findroot
+        shell: bash
+        run: |
+          set -e
+          # If root is supplied via input, honor it.
+          if [ -n "${{ github.event.inputs.root }}" ]; then
+            ROOT="${{ github.event.inputs.root }}"
+            if [ ! -d "$ROOT" ]; then
+              echo "::error::Provided root '$ROOT' is not a directory."
+              exit 1
+            fi
+            if [ ! -f "$ROOT/settings.gradle" ] && [ ! -f "$ROOT/settings.gradle.kts" ]; then
+              echo "::error::Provided root '$ROOT' doesn't contain settings.gradle(.kts)."
+              exit 1
+            fi
+          else
+            # Search in repo, then in unzipped/
+            ROOT=$(git ls-files | grep -E '(^|/)(settings\.gradle(\.kts)?)$' | sed -E 's|/(settings\.gradle(\.kts)?)$||' | head -n1)
+            if [ -z "$ROOT" ]; then
+              ROOT=$(find unzipped -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print0 | xargs -0 -I{} dirname {} | head -n1)
+            fi
+            if [ -z "$ROOT" ]; then
+              echo "::error::No settings.gradle(.kts) found. Make sure your zip contains a Gradle project or specify the 'root' input."
+              exit 1
+            fi
+          fi
+          echo "Detected project root: $ROOT"
+          echo "root=$ROOT" >> $GITHUB_OUTPUT
+          echo "Contents of root:"
+          ls -la "$ROOT"
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Try Gradle Wrapper
+        id: trywrapper
+        shell: bash
+        run: |
+          set -e
+          ROOT="${{ steps.findroot.outputs.root }}"
+          if [ -f "$ROOT/gradlew" ]; then
+            chmod +x "$ROOT/gradlew"
+            echo "has_wrapper=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_wrapper=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build (with Wrapper)
+        if: steps.trywrapper.outputs.has_wrapper == 'true'
+        working-directory: ${{ steps.findroot.outputs.root }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Install Gradle (fallback) and Build
+        if: steps.trywrapper.outputs.has_wrapper != 'true'
+        shell: bash
+        run: |
+          set -e
+          echo "Gradle wrapper not found, installing Gradle via SDKMAN..."
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.4
+          gradle --version
+          gradle -p "${{ steps.findroot.outputs.root }}" assembleDebug --no-daemon
+
+      - name: Upload APKs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: |
+            ${{ steps.findroot.outputs.root }}/**/build/outputs/apk/**/debug/*.apk
+            ${{ steps.findroot.outputs.root }}/**/build/outputs/apk/debug/*.apk
