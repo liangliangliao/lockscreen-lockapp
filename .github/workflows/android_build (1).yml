@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp-kiosk-v25b-compat.zip"
+      - "lockscreen-lockapp-kiosk-v26-fix-activelockstore.zip"
       - "lockscreen-lockapp-fix-patch88.zip"
       - ".github/workflows/android_build.yml"
 
@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen-lockapp-kiosk-v25b-compat.zip" ]]; then
-            zip="lockscreen-lockapp-kiosk-v25b-compat.zip"
+          if [[ -f "lockscreen-lockapp-kiosk-v26-fix-activelockstore.zip" ]]; then
+            zip="lockscreen-lockapp-kiosk-v26-fix-activelockstore.zip"
           elif [[ -f "lockscreen_app_project_final_updated3.zip" ]]; then
             zip="lockscreen_app_project_final_updated3.zip"
           else
