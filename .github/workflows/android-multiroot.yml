@@ -1,0 +1,129 @@
+name: Build Android APKs (MultiRoot)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      root:
+        description: "Optional: build only this subdirectory (path to settings.gradle(.kts) dir)"
+        required: false
+        type: string
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setmatrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Discover Gradle roots
+        id: find
+        shell: bash
+        run: |
+          set -e
+          echo "=== Repo top-level ==="
+          ls -la || true
+
+          # If a specific root is provided via workflow_dispatch, honor it.
+          if [ -n "${{ github.event.inputs.root }}" ]; then
+            ROOT="${{ github.event.inputs.root }}"
+            if [ ! -d "$ROOT" ]; then
+              echo "::error::Provided root '$ROOT' is not a directory."
+              exit 1
+            fi
+            if [ ! -f "$ROOT/settings.gradle" ] && [ ! -f "$ROOT/settings.gradle.kts" ]; then
+              echo "::error::Provided root '$ROOT' doesn't contain settings.gradle(.kts)."
+              exit 1
+            fi
+            echo "$ROOT" > roots.txt
+          else
+            # Prefer tracked files first
+            FILES=$(git ls-files | grep -E '(^|/)(settings\.gradle(\.kts)?)$' || true)
+            if [ -z "$FILES" ]; then
+              # Fallback: discover untracked too
+              FILES=$(find . -maxdepth 6 -type f \( -name settings.gradle -o -name settings.gradle.kts \) || true)
+            fi
+            if [ -z "$FILES" ]; then
+              echo "::error::No settings.gradle(.kts) found anywhere in repo."
+              exit 1
+            fi
+            echo "$FILES" | sed -E 's|/(settings\.gradle(\.kts)?)$||' | sort -u > roots.txt
+          fi
+
+          echo "=== Discovered Gradle roots ==="
+          cat roots.txt
+
+      - name: Build matrix JSON
+        id: setmatrix
+        shell: bash
+        run: |
+          set -e
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -y && sudo apt-get install -y jq
+          fi
+          ARR=$(jq -R -s -c 'split("\n") | map(select(length>0)) | map({root:.})' roots.txt)
+          echo "Matrix include: $ARR"
+          echo "matrix={\"include\":$ARR}" >> $GITHUB_OUTPUT
+
+  build:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Show selected root
+        run: |
+          echo "Building root: ${{ matrix.root }}"
+          ls -la "${{ matrix.root }}" || true
+
+      - name: Try Gradle Wrapper
+        id: trywrapper
+        shell: bash
+        run: |
+          set -e
+          ROOT="${{ matrix.root }}"
+          if [ -f "$ROOT/gradlew" ]; then
+            chmod +x "$ROOT/gradlew"
+            echo "has_wrapper=true" >> $GITHUB_OUTPUT
+          else:
+            echo "has_wrapper=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build (with Wrapper)
+        if: steps.trywrapper.outputs.has_wrapper == 'true'
+        working-directory: ${{ matrix.root }}
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Install Gradle (fallback) and Build
+        if: steps.trywrapper.outputs.has_wrapper != 'true'
+        shell: bash
+        run: |
+          set -e
+          echo "Gradle wrapper not found for ${{ matrix.root }}, installing Gradle via SDKMAN..."
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.4
+          gradle --version
+          gradle -p "${{ matrix.root }}" assembleDebug --no-daemon
+
+      - name: Upload APKs for this root
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ matrix.root }}
+          path: |
+            ${{ matrix.root }}/**/build/outputs/apk/**/debug/*.apk
+            ${{ matrix.root }}/**/build/outputs/apk/debug/*.apk
