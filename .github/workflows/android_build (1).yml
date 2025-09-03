@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp-robust-v3-final_with_gradle_wrapper.zip"
+      - "lockscreen-lockapp_with_github_actions (1).zip"
       - "lockscreen-lockapp-fix-patch88.zip"
       - ".github/workflows/android_build.yml"
 
@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "lockscreen-lockapp-robust-v3-final_with_gradle_wrapper.zip" ]]; then
-            zip="lockscreen-lockapp-robust-v3-final_with_gradle_wrapper.zip"
+          if [[ -f "lockscreen-lockapp_with_github_actions (1).zip" ]]; then
+            zip="lockscreen-lockapp_with_github_actions (1).zip"
           elif [[ -f "lockscreen_app_project_final_updated3.zip" ]]; then
             zip="lockscreen_app_project_final_updated3.zip"
           else
