@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "quote_app3333.zip"
-      - "quote_app_src_fix_v8_all_sys_icons.zip"
+      - "quote_app_white_screen_fixed.zip"
       - ".github/workflows/android_build.yml"
 
 jobs:
@@ -26,8 +26,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "quote_app_src_fix_v8_all_sys_icons.zip" ]]; then
-            zip="quote_app_src_fix_v8_all_sys_icons.zip"
+          if [[ -f "quote_app_white_screen_fixed.zip" ]]; then
+            zip="quote_app_white_screen_fixed.zip"
           elif [[ -f "quote_app333.zip" ]]; then
             zip="quote_app333.zip"
           else
