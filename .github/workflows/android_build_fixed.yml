@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "quote_app.zip"
+      - "quote_app3333.zip"
       - "quote_app_src_fix_v8_apkpath.zip"
       - ".github/workflows/android_build.yml"
 
@@ -28,8 +28,8 @@ jobs:
           set -e
           if [[ -f "quote_app_src_fix_v8_apkpath.zip" ]]; then
             zip="quote_app_src_fix_v8_apkpath.zip"
-          elif [[ -f "quote_app.zip" ]]; then
-            zip="quote_app.zip"
+          elif [[ -f "quote_app333.zip" ]]; then
+            zip="quote_app333.zip"
           else
             # fallback to any top-level .zip
             count=$(ls -1 *.zip 2>/dev/null | wc -l || true)
