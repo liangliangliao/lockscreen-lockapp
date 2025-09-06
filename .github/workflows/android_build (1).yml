@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "quote_app.zip33"
-      - "lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_ready.zip"
+      - "lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_manifestfix.zip"
 
 jobs:
   build:
@@ -27,8 +27,8 @@ jobs:
           set -e
           if [[ -f "quote_app_fixed3333.zip" ]]; then
             zip="quote_app_fixed3333.zip"
-          elif [[ -f "lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_ready.zip" ]]; then
-            zip="lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_ready.zip"
+          elif [[ -f "lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_manifestfix.zip" ]]; then
+            zip="lockscreen-lockapp_FULL_FIXED_BUILD_v16n_permfgs_manifestfix.zip"
           else
             echo "❌ 未找到 zip：请把修复后的 zip 放在仓库根目录，文件名为 lockscreen_app_project_final_fixed_new.zip 或 lockscreen_app_project_final_updated.zip"
             exit 1
