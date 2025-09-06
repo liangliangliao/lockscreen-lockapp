@@ -6,7 +6,6 @@ on:
     paths:
       - "quote_app.zip33"
       - "lockapp_FULL_FIXED_BUILD_v10_minimal_toast_logs.zip"
-      - ".github/workflows/android_build.yml"
 
 jobs:
   build:
