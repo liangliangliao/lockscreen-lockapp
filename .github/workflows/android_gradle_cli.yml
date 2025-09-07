@@ -7,7 +7,7 @@ on:
       - "quote_app.zip33"
       - "quote_app_fixed3333.zip"
       - "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
-      - "lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_20250907T071626Z.zip"
+      - "lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_stage3_20250907T072913Z.zip"
 
 jobs:
   build:
@@ -31,8 +31,8 @@ jobs:
             zip="quote_app_fixed3333.zip"
           elif [[ -f "quote_app.zip33" ]]; then
             zip="quote_app.zip33"
-          elif [[ -f "lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_20250907T071626Z.zip" ]]; then
-            zip="lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_20250907T071626Z.zip"
+          elif [[ -f "lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_stage3_20250907T072913Z.zip" ]]; then
+            zip="lockscreen-lockapp_GITHUB_BUILD_READY_PATCHED_fixColor_fixShim_stage3_20250907T072913Z.zip"
           elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip" ]]; then
             zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
           else
