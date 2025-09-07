@@ -7,7 +7,7 @@ on:
       - "quote_app.zip33"
       - "quote_app_fixed3333.zip"
       - "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
-      - "lockscreen-lockapp_GITHUB_CLEAN_BUILD_v3_gradlefix_builderfix_20250907T041507Z.zip"
+      - "lockscreen-lockapp_PATCH_sources_only_v20250907T044300Z.zip"
 
 jobs:
   build:
@@ -31,8 +31,8 @@ jobs:
             zip="quote_app_fixed3333.zip"
           elif [[ -f "quote_app.zip33" ]]; then
             zip="quote_app.zip33"
-          elif [[ -f "lockscreen-lockapp_GITHUB_CLEAN_BUILD_v3_gradlefix_builderfix_20250907T041507Z.zip" ]]; then
-            zip="lockscreen-lockapp_GITHUB_CLEAN_BUILD_v3_gradlefix_builderfix_20250907T041507Z.zip"
+          elif [[ -f "lockscreen-lockapp_PATCH_sources_only_v20250907T044300Z.zip" ]]; then
+            zip="lockscreen-lockapp_PATCH_sources_only_v20250907T044300Z.zip"
           elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip" ]]; then
             zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
           else
