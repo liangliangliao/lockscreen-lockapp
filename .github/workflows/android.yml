@@ -6,7 +6,6 @@ on:
     paths:
       - "quote_app.zip33"
       - "quote_app_fixed3333.zip"
-      - "lockscreen-lockapp_GITHUB_READY_BUILDABLE.zip"
       - "lockscreen-lockapp_GITHUB_READY_DISABLE_OLDPKG.zip"
 
 jobs:
@@ -34,8 +33,8 @@ jobs:
             zip="quote_app.zip33"
           elif [[ -f "lockscreen-lockapp_GITHUB_READY_DISABLE_OLDPKG.zip" ]]; then
             zip="lockscreen-lockapp_GITHUB_READY_DISABLE_OLDPKG.zip"
-          elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE.zip" ]]; then
-            zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE.zip"
+          elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip" ]]; then
+            zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
           else
             echo "❌ 未找到可识别的 zip：请把修复后的 zip 放在仓库根目录，文件名建议为 lockscreen-lockapp_GITHUB_READY_DISABLE_OLDPKG.zip 或 lockscreen-lockapp_GITHUB_READY_BUILDABLE.zip"
             exit 1
