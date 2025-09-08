@@ -7,7 +7,7 @@ on:
       - "quote_app.zip33"
       - "quote_app_fixed3333.zip"
       - "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
-      - "lockscreen-lockapp_FSI_RESTORED_v23_gk_pendingintent_fixed.zip"
+      - "lockscreen-lockapp_FSI_RESTORED_v24b_carousel_unlockfix.zip"
 
 jobs:
   build:
@@ -31,8 +31,8 @@ jobs:
             zip="quote_app_fixed3333.zip"
           elif [[ -f "quote_app.zip33" ]]; then
             zip="quote_app.zip33"
-          elif [[ -f "lockscreen-lockapp_FSI_RESTORED_v23_gk_pendingintent_fixed.zip" ]]; then
-            zip="lockscreen-lockapp_FSI_RESTORED_v23_gk_pendingintent_fixed.zip"
+          elif [[ -f "lockscreen-lockapp_FSI_RESTORED_v24b_carousel_unlockfix.zip" ]]; then
+            zip="lockscreen-lockapp_FSI_RESTORED_v24b_carousel_unlockfix.zip"
           elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip" ]]; then
             zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
           else
