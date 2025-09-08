@@ -1,0 +1,115 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "*.zip"
+      - ".github/workflows/android_gradle_cli.yml"
+      - "BUILD_TAG.txt"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sanity check - list repo root
+        run: ls -lah
+
+      - name: Pick project zip (auto-detect)
+        id: pick
+        shell: bash
+        run: |
+          set -e
+          # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
+          declare -a CANDIDATES=(
+            "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH11_force_wrapper.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH10_gradle84_ci_system.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH9_gradle84_fix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH8_root_alias_task.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH7_repos_fix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH6_buildtask_fix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH5_repo_fix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH4_ci_rootfix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH3_manifestfix.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH2_androidx.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH1.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci.zip"
+          )
+          zip=""
+          for f in "${CANDIDATES[@]}"; do
+            if [[ -f "$f" ]]; then zip="$f"; break; fi
+          done
+          if [[ -z "$zip" ]]; then
+            echo "❌ 未找到可识别的 zip：请把修复后的 zip 放在仓库根目录"; exit 1
+          fi
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+          echo "Using ZIP: $zip"
+          unzip -l "$zip" | sed -n '1,50p'
+
+      - name: Unzip project to workspace root (keep .github)
+        run: |
+          rm -rf app build.gradle* settings.gradle* gradle.properties gradle/ .gradle gradlew*
+          unzip -o -q "${{ steps.pick.outputs.zip }}" -x ".github/*" -d .
+          echo "After unzip:"
+          ls -lah
+
+      - name: Show build tag
+        run: |
+          echo "BUILD_TAG:"
+          test -f BUILD_TAG.txt && cat BUILD_TAG.txt || echo "NO BUILD_TAG"
+
+      - name: Set up JDK 17 (AGP 8.x 推荐)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Gradle CLI 8.4 (only to generate wrapper)
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.4
+
+      - name: Generate/Pin Gradle Wrapper 8.4
+        shell: bash
+        run: |
+          set -e
+          # 用 Gradle 8.4 生成 wrapper，并强制指定分发版本为 8.4
+          gradle -q wrapper --gradle-version 8.4 --distribution-type all
+          chmod +x gradlew
+          echo "=== gradle (CLI) version ==="
+          gradle --version
+          echo "=== ./gradlew (WRAPPER) version ==="
+          ./gradlew --version
+
+      - name: Diagnostic — print source tree
+        run: |
+          echo "---- Legacy package (com.example.app) ----"
+          find app/src/main/java/com/example/app -type f -name '*.kt' -print 2>/dev/null | sort || true
+          echo "---- Active package (com.example/lockapp) ----"
+          find app/src/main/java/com/example/lockapp -type f -name '*.kt' -print 2>/dev/null | sort || true
+          echo "---- grep setFullScreenIntent ----"
+          grep -RIn "setFullScreenIntent(" app/src/main/java || true
+
+      - name: Clean
+        run: ./gradlew clean
+
+      - name: Build debug APK (always use wrapper)
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Locate APKs
+        run: |
+          echo "Built APKs:"
+          find app/build/outputs/apk -type f -name "*.apk" -print
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
