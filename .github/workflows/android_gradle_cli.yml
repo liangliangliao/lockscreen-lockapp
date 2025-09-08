@@ -4,10 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
+      # 保留你原有的触发文件名
       - "quote_app.zip33"
       - "quote_app_fixed3333.zip"
       - "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
-      - "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH3_manifestfix.zip"
+      - "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH4_ci_rootfix.zip"
+      # 以及任何 *.zip（更通用）
 
 jobs:
   build:
@@ -27,17 +29,24 @@ jobs:
         shell: bash
         run: |
           set -e
+          # 原有优先级逻辑 + 兜底挑最新的 zip
           if [[ -f "quote_app_fixed3333.zip" ]]; then
             zip="quote_app_fixed3333.zip"
           elif [[ -f "quote_app.zip33" ]]; then
             zip="quote_app.zip33"
-          elif [[ -f "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH3_manifestfix.zip" ]]; then
-            zip="lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH3_manifestfix.zip"
+          elif [[ -f "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH4_ci_rootfix.zip" ]]; then
+            zip="lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH4_ci_rootfix.zip"
           elif [[ -f "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip" ]]; then
             zip="lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
           else
-            echo "❌ 未找到可识别的 zip：请把修复后的 zip 放在仓库根目录，文件名建议为 lockscreen-lockapp_GITHUB_READY_DISABLE_OLDPKG.zip 或 lockscreen-lockapp_GITHUB_READY_BUILDABLE.zip"
-            exit 1
+            # 选择仓库根目录下最新修改时间的 zip 作为兜底
+            latest=$(ls -t *.zip 2>/dev/null | head -n1 || true)
+            if [[ -n "$latest" ]]; then
+              zip="$latest"
+            else
+              echo "❌ 未找到可识别的 zip：请把修复后的 zip 放在仓库根目录"
+              exit 1
+            fi
           fi
           echo "zip=$zip" >> "$GITHUB_OUTPUT"
           echo "Using ZIP: $zip"
@@ -52,7 +61,26 @@ jobs:
           echo "After unzip:"
           ls -lah
 
+      - name: Detect Gradle root (settings.gradle/.kts)
+        id: detect
+        shell: bash
+        run: |
+          set -e
+          # 在解压结果里递归找 settings.gradle(.kts)
+          root_dir=$(dirname "$(grep -RIl --include='settings.gradle' --include='settings.gradle.kts' '^' . | head -n1)")
+          if [[ -z "$root_dir" ]]; then
+            echo "❌ 未找到 settings.gradle(.kts)，无法识别 Gradle 根目录"
+            exit 1
+          fi
+          # 归一化路径（把 '.' 也输出）
+          [ -z "$root_dir" ] && root_dir="."
+          echo "gradle_root=$root_dir" >> "$GITHUB_OUTPUT"
+          echo "Gradle root detected: $root_dir"
+          echo "Tree preview of gradle root:"
+          find "$root_dir" -maxdepth 2 -type f -name "build.gradle*" -o -name "settings.gradle*" | sed 's/^/ - /'
+
       - name: Show build tag
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
         run: |
           echo "BUILD_TAG:"
           test -f BUILD_TAG.txt && cat BUILD_TAG.txt || echo "NO BUILD_TAG"
@@ -63,10 +91,8 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Set up Gradle 8.4 (CLI)
+      - name: Set up Gradle (prefer wrapper)
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 8.4
 
       - name: Gradle cache
         uses: actions/cache@v4
@@ -74,36 +100,96 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-cache-${{ hashFiles('BUILD_TAG.txt') }}-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: gradle-cache-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             gradle-cache-
 
-      - name: Gradle version
-        run: gradle --version
-
       - name: Diagnostic — print source tree
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
         run: |
           echo "---- Legacy package (com.example.app) ----"
-          find app/src/main/java/com/example/app -type f -name '*.kt' -print 2>/dev/null | sort || true
+          find . -path "./app/src/main/java/com/example/app" -type f -name '*.kt' -print 2>/dev/null | sort || true
           echo "---- Active package (com.example/lockapp) ----"
-          find app/src/main/java/com/example/lockapp -type f -name '*.kt' -print 2>/dev/null | sort || true
+          find . -path "./app/src/main/java/com/example/lockapp" -type f -name '*.kt' -print 2>/dev/null | sort || true
           echo "---- grep setFullScreenIntent ----"
-          grep -RIn "setFullScreenIntent(" app/src/main/java || true
+          grep -RIn "setFullScreenIntent(" . || true
+          echo "---- Manifests ----"
+          find . -type f -name "AndroidManifest.xml" -print | sed 's/^/ - /'
+
+      - name: Ensure AndroidX is enabled (patch gradle.properties if missing)
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
+        shell: bash
+        run: |
+          set -e
+          touch gradle.properties
+          grep -q '^android.useAndroidX=' gradle.properties || echo 'android.useAndroidX=true' >> gradle.properties
+          grep -q '^android.enableJetifier=' gradle.properties || echo 'android.enableJetifier=true' >> gradle.properties
+          echo "gradle.properties content:"
+          cat gradle.properties
+
+      - name: Gradle version
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
+        run: |
+          if [[ -x "./gradlew" ]]; then
+            ./gradlew --version
+          else
+            gradle --version
+          fi
 
       - name: Clean
-        run: gradle clean
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
+        run: |
+          if [[ -x "./gradlew" ]]; then
+            ./gradlew clean
+          else
+            gradle clean
+          fi
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build debug APK (auto-detect task)
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
+        shell: bash
+        run: |
+          set -e
+          if [[ -x "./gradlew" ]]; then
+            GRADLE="./gradlew"
+            chmod +x ./gradlew
+          else
+            GRADLE="gradle"
+          fi
+          # 列出可用任务，优先使用 :app:assembleDebug
+          tasks=$($GRADLE -q tasks --all || true)
+          if echo "$tasks" | grep -q ":app:assembleDebug"; then
+            task=":app:assembleDebug"
+          elif echo "$tasks" | grep -q "^assembleDebug"; then
+            task="assembleDebug"
+          else
+            # 再找所有 assemble*Debug 任务，取第一个
+            task=$(echo "$tasks" | grep -oE ":[^ ]*:assemble[A-Za-z]*Debug" | head -n1)
+            if [[ -z "$task" ]]; then
+              echo "❌ 未找到 assembleDebug 系列任务，以下为可用任务片段："
+              echo "$tasks" | sed -n '1,200p'
+              exit 1
+            fi
+          fi
+          echo "Using task: $task"
+          $GRADLE $task --no-daemon --stacktrace
 
-      - name: Locate APKs
+      - name: Locate APKs (recursive)
+        working-directory: ${{ steps.detect.outputs.gradle_root }}
         run: |
           echo "Built APKs:"
-          find app/build/outputs/apk -type f -name "*.apk" -print
+          # 递归搜索所有模块的 outputs/apk
+          found=$(find . -type f -path "*/build/outputs/apk/*/*.apk" -o -path "*/build/outputs/apk/*.apk" | sort || true)
+          if [[ -z "$found" ]]; then
+            echo "❌ 未找到 APK，请检查上一步输出日志（或 Manifest 合并错误）"
+            exit 1
+          fi
+          echo "$found"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: |
-            app/build/outputs/apk/debug/*.apk
+            ${{ steps.detect.outputs.gradle_root }}/**/build/outputs/apk/*/*.apk
+            ${{ steps.detect.outputs.gradle_root }}/**/build/outputs/apk/*.apk
