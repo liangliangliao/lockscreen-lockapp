@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "*.zip"
-      - ".github/workflows/android_gradle_cli.yml"
-      - "BUILD_TAG.txt"
+      - "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH12_wrapper_workflow_fix (1).zip"
+      
 
 jobs:
   build:
@@ -28,19 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_GITHUB_READY_BUILDABLE88.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH11_force_wrapper.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH10_gradle84_ci_system.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH9_gradle84_fix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH8_root_alias_task.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH7_repos_fix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH6_buildtask_fix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH5_repo_fix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH4_ci_rootfix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH3_manifestfix.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH2_androidx.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH1.zip"
-            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci.zip"
+            "lockscreen-lockapp_RESCUE_BUILDABLE_v4_auto_ci_PATCH12_wrapper_workflow_fix (1).zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
