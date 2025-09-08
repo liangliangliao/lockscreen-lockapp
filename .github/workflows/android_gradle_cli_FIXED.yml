@@ -90,10 +90,10 @@ jobs:
       - name: Build debug APK (always use wrapper)
         run: ./gradlew :app:assembleDebug --no-daemon
 
-      - name: Locate APKs
+      - name: List built APKs (robust)
         run: |
-          echo "Built APKs:"
-          find app/build/outputs/apk -type f -name "*.apk" -print
+         echo "Built APKs:"
+         find . -path "*/build/outputs/apk*" -type f -name "*.apk" -print
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
