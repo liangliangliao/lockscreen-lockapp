@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "quote_app3333.zip"
-      - "quote_app_src_fixed_full_v17g_1757423490.zip"
+      - "quote_app_src_fixed_full_v17g_fix2_1757424401.zip"
 
 jobs:
   build:
@@ -25,8 +25,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [[ -f "quote_app_src_fixed_full_v17g_1757423490.zip" ]]; then
-            zip="quote_app_src_fixed_full_v17g_1757423490.zip"
+          if [[ -f "quote_app_src_fixed_full_v17g_fix2_1757424401.zip" ]]; then
+            zip="quote_app_src_fixed_full_v17g_fix2_1757424401.zip"
           elif [[ -f "quote_app333.zip" ]]; then
             zip="quote_app333.zip"
           else
