@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - lockscreen-lockapp_CLEANED_only_java_src_PATCH_ServiceInfoImport.zip"
+      - "lockscreen-lockapp_PATCH_applied_v1.zip"
       
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_CLEANED_only_java_src_PATCH_ServiceInfoImport.zip"
+            "lockscreen-lockapp_PATCH_applied_v1.zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
