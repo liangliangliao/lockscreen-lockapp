@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp_RESOLVED_toast_overloads_and_appglobals_v1.zip"
+      - "lockscreen-lockapp_RESOLVED_toast_overloads_and_appglobals_v2.zip"
       
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_RESOLVED_toast_overloads_and_appglobals_v1.zip"
+            "lockscreen-lockapp_RESOLVED_toast_overloads_and_appglobals_v2.zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
