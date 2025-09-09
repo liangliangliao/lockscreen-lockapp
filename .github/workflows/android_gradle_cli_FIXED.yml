@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp_CLEANED_with_OLD_UI_swap_v16_manyfixes.zip"
+      - "lockscreen-lockapp_CLEANED_with_OLD_UI_swap_v17_fix_dao_bridge_imports.zip"
       
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_CLEANED_with_OLD_UI_swap_v16_manyfixes.zip"
+            "lockscreen-lockapp_CLEANED_with_OLD_UI_swap_v17_fix_dao_bridge_imports.zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
