@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp_FIXPACK_v30_vm_factory_and_vm_calls_PATCH2.zip"
+      - "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases.zip"
       
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_FIXPACK_v30_vm_factory_and_vm_calls_PATCH2.zip"
+            "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases.zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
