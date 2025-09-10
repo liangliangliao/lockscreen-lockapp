@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases_PATCHED2_EDITED_FIXED_BUILD_NETREPO_FIX_3_OVERLAY_DONE_FIX.zip"
+      - "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases_PATCHED2_EDITED_FIXED_BUILD_NETREPO_FIX_4_SCREENON_UIFIX.zip"
       
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           set -e
           # 依次匹配你仓库里常用的 ZIP 名称；可以按需增删
           declare -a CANDIDATES=(
-            "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases_PATCHED2_EDITED_FIXED_BUILD_NETREPO_FIX_3_OVERLAY_DONE_FIX.zip"
+            "lockscreen-lockapp_FIXPACK_v31_getallonce_vm_aliases_PATCHED2_EDITED_FIXED_BUILD_NETREPO_FIX_4_SCREENON_UIFIX.zip"
           )
           zip=""
           for f in "${CANDIDATES[@]}"; do
